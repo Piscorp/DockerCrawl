@@ -1,0 +1,24 @@
+docker run -d -p 4444:4444 --name selenium-hub selenium/hub
+docker run -d -P --link selenium-hub:hub selenium/node-chrome
+docker run -d  selenium/standalone-chrome-debug
+
+
+docker run -d -P selenium/standalone-chrome-debug
+
+FOR /f "tokens=*" %i IN ('docker ps -q') DO docker stop %i
+FOR /f "tokens=*" %i IN ('docker ps -a -q') DO docker rm %i
+
+
+netsh advfirewall firewall add rule name=”Docker Daemon” dir=in action=allow protocol=TCP localport=2375
+
+
+netsh interface portproxy add v4tov4 listenport=2375 connectaddress=127.0.0.1 connectport=2375 listenaddress=192.168.10.235 protocol=tcp
+
+FOR /L %I IN (32880,1,32900) DO netsh firewall add portopening TCP %I "ChromeRemoteDriver"%I
+
+sc stop docker
+cd "C:\Program Files\Docker\Docker\Resources"
+.\dockerd.exe --unregister-service
+.\dockerd.exe --register-service --data-root "D:\ProgramData\docker"
+sc start docker
+docker info
